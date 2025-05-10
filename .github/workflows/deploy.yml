@@ -1,0 +1,39 @@
+name: Deploy to K3s
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: self-hosted 
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v1
+        with:
+          kubectl-version: 'latest'
+
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+
+
+      - name: Verify kubectl configuration
+        run: |
+          kubectl config view
+          kubectl get nodes # Check if kubectl can fetch nodes as a basic test
+
+      - name: Apply Kubernetes manifest
+        run: kubectl apply -f nginx-deploy.yaml --validate=false
+
+      - name: Check deployment status
+        run: kubectl rollout status deployment/hello-nginx
+
+
+
